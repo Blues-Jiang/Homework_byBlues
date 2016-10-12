@@ -189,7 +189,7 @@ PairofPoint Grid::exhaustiveMinDis(){
 
 PairofPoint Grid::mergeDistance(){
   sort();
-  //cout<<"sort complete"<<endl;
+  cout<<"sort complete"<<endl;
   return mergeDistance(0,size-1);
 }
 
