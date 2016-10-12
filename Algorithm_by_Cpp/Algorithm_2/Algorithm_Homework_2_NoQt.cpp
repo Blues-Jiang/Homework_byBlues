@@ -1,11 +1,9 @@
-#include "mainwindow.h"
-#include <QApplication>
-#include "qcustomplot.h"
 
 #include <iostream>
+using namespace std;
+
 #include <iomanip>
 #include <cmath>
-using namespace std;
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
@@ -34,10 +32,10 @@ public:
 
 class Point{
 public:
-  int x,y;
+  double x,y;
   int id;
   Point(int id,int x,int y){
-    int
+    this->id=id;
     this->x=x;
     this->y=y;
   }
@@ -50,11 +48,19 @@ public:
 class PairofPoint{
 public:
   double distance;
-  Point a,b;
-  PairofPoint(){
-
+  Point* a,b;
+  PairofPoint(Point& a,Point& b){
+    this->a=a;
+    this->b=b;
+    if(a == b)  distance = MAX;
+    else distance=sqrt(pow(( a->x - b->x ),2) + pow(( a->y - b->y ),2));
   }
 };
+
+PairofPoint min(PairofPoint a,PairofPoint b){
+  if(a.distance<=b.distance)  return a;
+  else                        return b;
+}
 
 class Grid{
 private:
@@ -65,17 +71,20 @@ private:
   void exchange(int i,int j);
   void quickSort(int first,int last);
   void insertionSort(int first,int last);
+  void sortY(int first,int last);
   void partition(int first,int last);
+  PairofPoint middleCheck(PairofPoint pp,double mid,int locMid);
 
 public:
   Grid();
   Grid(int size);
   ~Grid();
   void sort();
-  void exhaustiveMindis();
+  PairofPoint exhaustiveMinDis();
+  PairofPoint mergeMinDis();
 
+  PairofPoint distance();
 
-  double distance();
   int getSize();
   bool isXSorted();
 };
@@ -88,7 +97,7 @@ Grid::Grid(int size){
   this->size = size;
   list = new Point[size];
   for(int i=0;i<size;i++){
-    list[i]=new Point((rand()%MAX+MIN),(rand()%MAX+MIN));
+    list[i]=new Point(i,(rand()%MAX+MIN),(rand()%MAX+MIN));
   }
 }
 
@@ -165,62 +174,70 @@ void Grid::sort(){
     quickSort(0,size-1);
 }
 
-void Grid::exhaustiveMinDis(){
-  minDis=MAX;
+PairofPoint Grid::exhaustiveMinDis(){
+  PairofPoint closestPair=PairofPoint(list[0],list[0]);
   for(int i=0;i<size-1;i++){
     for(int j=i;j<size;j++){
-      if(distance(i,j)<minDis) {
-        minDis=distance(i,j);
-        locA=i;
-        locB=j;
-      }
+      closestPair=min(closestPair,distance(i,j));
     }
   }
 }
 
-void Grid::mergeMinDis(){
-  int locLA,locLB,locRA,locRB;
+PairofPoint Grid::mergeDistance(){
   sort();
-
+  return mergeDistance(0,size-1);
 }
 
-double Grid::mergeDistance(int left,int right){
-  double minDistance;
+PairofPoint Grid::mergeDistance(int left,int right){
+  //int locLA,locLB,locRA,locRB;
+
+  PairofPoint minPair,minDL,minDR;
   if(right-left <= 0){//1 point or Error case
-    minDistance=MAX;
+    minPair=PairofPoint(list[left],list[left]);
   }
   else if(right-lift == 1){//2 points
-    minDistance=distance(left,right);
+    minPair=distance(left,right);
   }
   else if(right-left == 2){//3 points
-    minDistance=distance(left,right);
-    if(distance())
+    minPair=distance(left,right);
+    if(distance(left,left+1)<minPair.distance)  minPair=distance(left,left+1);
+    if(distance(right-1,right)<minPair.distance)  minPair=distance(right-1,right);
   }
   else{//more than 3 points
-    int middle=(list[right]->x-list[left]->x);
+    double middle=(list[right]->x-list[left]->x);
     int locMid;
     for(locMid=left;locMid<right && list[locMid]->x > middle;locMid++);
-
-
-    mergeDistance(left,locMid);
-    mergeDistance(locMid,right);
-
+    minDL=mergeDistance(left,locMid);
+    minDR=mergeDistance(locMid,right);
+    minPair=min(minDL,minDR);
+    minPair=middleCheck(minPair,mid,locMid);
   }
+
+  return minPair;
 }
 
+  PairofPoint Grid::middleCheck(PairofPoint pp,double mid,int locMid){
+    PairofPoint minPair=pp;
+
+    for(int i=locMid-1;list[i]->x>=(mid-d);i--){
+      for(int j=locMid;list[j]->x<=(mid+d);j++){
+        if (list[j]->y <= list[i]->y+d && list[j]->y >= list[i]->y-d){
+          minPair=min(minPair,distance(i,j));
+        }
+      }
+    }
+    return minPair;
+  }
 
 
-double Grid::distance(int a,int b){
-  double dis;
-  dis=sqrt(pow(( list[a]->x - list[b]->x ),2) + pow(( list[a]->y - list[b]->y ),2));
-  return dis;
+PairofPoint Grid::distance(int a,int b){
+  PairofPoint pp=PairofPoint(list[a],list[b]);
+  return pp;
 }
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
 
-    return a.exec();
+
+    return 0;
 }
