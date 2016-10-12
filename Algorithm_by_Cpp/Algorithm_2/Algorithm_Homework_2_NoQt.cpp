@@ -63,7 +63,7 @@ public:
   }
 };
 
-PairofPoint min(PairofPoint a,PairofPoint b){
+PairofPoint closer(PairofPoint a,PairofPoint b){
   if(a.distance<=b.distance)  return a;
   else                        return b;
 }
@@ -176,7 +176,7 @@ PairofPoint Grid::exhaustiveMinDis(){
   PairofPoint closestPair=PairofPoint(list[0],list[0]);
   for(int i=0;i<size-1;i++){
     for(int j=i;j<size;j++){
-      closestPair=min(closestPair,distance(i,j));
+      closestPair=closer(closestPair,distance(i,j));
     }
   }
   return closestPair;
@@ -191,7 +191,7 @@ PairofPoint Grid::mergeDistance(){
 PairofPoint Grid::mergeDistance(int left,int right){
   //int locLA,locLB,locRA,locRB;
 
-  PairofPoint minPair=PairofPoint();
+  PairofPoint minPair;
   PairofPoint minDL,minDR;
   if(right-left == 1){//2 points
     minPair=distance(left,right);
@@ -211,7 +211,7 @@ PairofPoint Grid::mergeDistance(int left,int right){
     //for(locMid=left;locMid<=right && list[locMid]->x < middle;locMid++);
     minDL=mergeDistance(left,locMid);
     minDR=mergeDistance(locMid+1,right);
-    minPair=min(minDL,minDR);
+    minPair=closer(minDL,minDR);
     minPair=middleCheck(minPair,middle,locMid);
   }
   else{
@@ -226,7 +226,7 @@ PairofPoint Grid::mergeDistance(int left,int right){
     for(int i=locMid;i>=0 && list[i]->x >= (mid-pp.distance);i--){
       for(int j=locMid;j<size && list[j]->x <= (mid+pp.distance);j++){
         if (list[j]->y <= (list[i]->y+pp.distance) && (list[j]->y >= list[i]->y-pp.distance)){
-          minPair=min(minPair,distance(i,j));
+          minPair=closer(minPair,distance(i,j));
         }
       }
     }

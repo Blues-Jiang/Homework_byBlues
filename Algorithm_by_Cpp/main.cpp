@@ -191,7 +191,7 @@ PairofPoint Grid::mergeDistance(){
 PairofPoint Grid::mergeDistance(int left,int right){
   //int locLA,locLB,locRA,locRB;
 
-  PairofPoint minPair=PairofPoint();
+  PairofPoint minPair;
   PairofPoint minDL,minDR;
   if(right-left == 1){//2 points
     minPair=distance(left,right);
