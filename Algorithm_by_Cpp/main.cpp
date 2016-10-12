@@ -58,7 +58,7 @@ public:
   PairofPoint(Point *a,Point *b){
     this->a=a;
     this->b=b;
-    if(a == b)  distance = MAX;
+    if(a == b)  distance = MAX*MAX;
     else distance=sqrt(pow(( a->x - b->x ),2) + pow(( a->y - b->y ),2));
   }
 };
@@ -76,7 +76,7 @@ private:
   double minDis;
   void exchange(int i,int j);
   void quickSort(int first,int last);
-  void insertionSort(int first,int last);
+  //void insertionSort(int first,int last);
   void sortY(int first,int last);
   int partition(int first,int last);
   PairofPoint middleCheck(PairofPoint pp,double mid,int locMid);
@@ -101,9 +101,9 @@ Grid::Grid(int size){
   locB=size;
   srand(time(NULL));
   this->size = size;
-  list = new Point*[size];
+  list = new Point* [size];
   for(int i=0;i<size;i++){
-    list[i]=new Point(i,(rand()%MAX+MIN),(rand()%MAX+MIN));
+    list[i]=new Point(i+1,(rand()%MAX+MIN),(rand()%MAX+MIN));
   }
 }
 
@@ -132,10 +132,11 @@ bool Grid::isXSorted(){//最后判断各个点的x坐标是否已经成功排序
 }
 
 Grid::~Grid(){
+  for(int i=0;i<size;i++) delete list[i];
   delete[] list;
 }
 
-void Grid::insertionSort(int first,int last){
+/*void Grid::insertionSort(int first,int last){
   for(int i=first+1;i<last;i++){
     Point* temp=list[i];
     int j;
@@ -144,20 +145,14 @@ void Grid::insertionSort(int first,int last){
     }
     list[j+1]=temp;
   }
-}
+}*/
 
 void Grid::quickSort(int first,int last){//递归调用该函数
   if(first >= last)  return;//退出条件
-  if((last-first)<=20){
-    insertionSort(first,last);
+  int key=partition(first,last);
+  quickSort(first,key-1);
+  quickSort(key+1,last);
   }
-  else{
-    int key=partition(first,last);
-    quickSort(first,key-1);
-    quickSort(key+1,last);
-  }
-
-}
 
 int Grid::partition(int first,int last){
   int key=first;
@@ -189,33 +184,38 @@ PairofPoint Grid::exhaustiveMinDis(){
 
 PairofPoint Grid::mergeDistance(){
   sort();
-  cout<<"sort complete"<<endl;
+  if(isXSorted())  cout<<"sort complete"<<endl;
   return mergeDistance(0,size-1);
 }
 
 PairofPoint Grid::mergeDistance(int left,int right){
   //int locLA,locLB,locRA,locRB;
 
-  PairofPoint minPair,minDL,minDR;
-  if(right-left <= 0){//1 point or Error case
-    minPair=PairofPoint(list[left],list[left]);
-  }
-  else if(right-left == 1){//2 points
+  PairofPoint minPair=PairofPoint();
+  PairofPoint minDL,minDR;
+  if(right-left == 1){//2 points
     minPair=distance(left,right);
+
   }
   else if(right-left == 2){//3 points
     minPair=distance(left,right);
     if(distance(left,left+1).distance<minPair.distance)  minPair=distance(left,left+1);
     if(distance(right-1,right).distance<minPair.distance)  minPair=distance(right-1,right);
+
   }
-  else{//more than 3 points
-    double middle=(list[right]->x-list[left]->x);
-    int locMid;
-    for(locMid=left;locMid<right && list[locMid]->x > middle;locMid++);
+  else if(right-left >= 3){//more than 3 points
+    //double middle=(list[right]->x+list[left]->x)/2;
+    //int locMid;
+    int locMid=floor((right+left)/2);
+    double middle=list[locMid]->x;
+    //for(locMid=left;locMid<=right && list[locMid]->x < middle;locMid++);
     minDL=mergeDistance(left,locMid);
-    minDR=mergeDistance(locMid,right);
+    minDR=mergeDistance(locMid+1,right);
     minPair=min(minDL,minDR);
     minPair=middleCheck(minPair,middle,locMid);
+  }
+  else{
+    minPair=distance(0,0);
   }
 
   return minPair;
@@ -223,10 +223,9 @@ PairofPoint Grid::mergeDistance(int left,int right){
 
   PairofPoint Grid::middleCheck(PairofPoint pp,double mid,int locMid){
     PairofPoint minPair=pp;
-
-    for(int i=locMid-1;list[i]->x>=(mid-pp.distance);i--){
-      for(int j=locMid;list[j]->x<=(mid+pp.distance);j++){
-        if (list[j]->y <= list[i]->y+pp.distance && list[j]->y >= list[i]->y-pp.distance){
+    for(int i=locMid;i>=0 && list[i]->x >= (mid-pp.distance);i--){
+      for(int j=locMid;j<size && list[j]->x <= (mid+pp.distance);j++){
+        if (list[j]->y <= (list[i]->y+pp.distance) && (list[j]->y >= list[i]->y-pp.distance)){
           minPair=min(minPair,distance(i,j));
         }
       }
@@ -236,8 +235,7 @@ PairofPoint Grid::mergeDistance(int left,int right){
 
 
 PairofPoint Grid::distance(int a,int b){
-  PairofPoint pp=PairofPoint(list[a],list[b]);
-  return pp;
+  return PairofPoint(list[a],list[b]);
 }
 
 int main(int argc, char *argv[])
@@ -255,7 +253,9 @@ int main(int argc, char *argv[])
   if(way != 0)  closestPair=g->mergeDistance();
   else          closestPair=g->exhaustiveMinDis();
   tc.stop();
-  cout<<tc.getTime()<<endl;
-
+  cout.setf(ios::fixed,ios::floatfield); //定点格式
+  cout<<setprecision(3)<<tc.getTime()<<endl;
+  cout<<"the pair of points is:<"<<setprecision(0)<<closestPair.a->x<<","<<closestPair.a->y<<">,<"<<closestPair.b->x<<","<<closestPair.b->y<<">"<<endl;
+  cout<<"Cloest distance:"<<setprecision(3)<<closestPair.distance<<endl;
   return 0;
 }
