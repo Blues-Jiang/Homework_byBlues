@@ -10,8 +10,6 @@ using namespace std;
 #define MAX 10000
 #define MIN 0
 //#define N 100
-int counter=0;
-int counter1=0;
 
 class TimeCheck{
 public:
@@ -77,12 +75,9 @@ private:
   Point** buffer;
   PairofPoint closestPair;
 
-  Grid(int size);
-  Grid();
-  ~Grid();
-
   void exchange(int i,int j);
   void exchbuffer(int i,int j);
+  PairofPoint distance(int a,int b);
   //merge sort is to sort by x,the source is the List itself,sort list by x line before devide and conquer.
   void mergeCombine(int first,int middle,int last);
   void mergeSort(int first,int last);
@@ -95,6 +90,10 @@ private:
   PairofPoint combineMiddle(PairofPoint pp,double middle,int locMid);
 
 public:
+  Grid(int size);
+  Grid();
+  ~Grid();
+
   int getSize();
   PairofPoint getClosetPair();
   bool isXSorted();
@@ -148,7 +147,7 @@ int Grid::getSize(){
   return size;
 }
 
-PairofPoint getClosetPair(){
+PairofPoint Grid::getClosetPair(){
   return closestPair;
 }
 
@@ -209,15 +208,15 @@ int Grid::partition(int first,int last){
 }
 
 
-void sortX(){
+void Grid::sortX(){
   mergeSort(0,size-1);
 }
 
-void sortY(int a,int b){
+void Grid::sortY(int a,int b){
   quickSort(a,b);
 }
 
-PairofPoint Grid::exhaustiveMinDis(){
+PairofPoint Grid::exhaustiveDistance(){
   for(int i=0;i<size-1;i++){
     for(int j=i;j<size;j++){
       closestPair=closer(closestPair,distance(i,j));
@@ -255,7 +254,7 @@ PairofPoint Grid::mergeDistance(int left,int right){
     minDL=mergeDistance(left,locMid);
     minDR=mergeDistance(locMid+1,right);
     minPair=closer(minDL,minDR);
-    minPair=middleCheck(minPair,middle,locMid);
+    minPair=combineMiddle(minPair,middle,locMid);
   }
   else{
     minPair=distance(0,0);
@@ -264,26 +263,20 @@ PairofPoint Grid::mergeDistance(int left,int right){
   return minPair;
 }
 
-<<<<<<< HEAD
-  PairofPoint Grid::middleCheck(PairofPoint pp,double mid,int locMid){
-    int limit;
-    PairofPoint minPair=pp;
-    for(int i=locMid;i>=0 && list[i]->x >= (mid-pp.distance);i--){
-      limit=0;
-      for(int j=locMid;limit<=6 && j<size && list[j]->x <= (mid+pp.distance);j++){
-=======
   PairofPoint Grid::combineMiddle(PairofPoint pp,double middle,int locMid){
     PairofPoint minPair=pp;
-    int left,right;
+    int left,right,cursor;
     int limit;
     for(left=locMid-1;left>=0 && list[left]->x >= (middle-pp.distance);left--)    buffer[left]=list[left];
     for(right=locMid;right<size && list[right]->x <= (middle+pp.distance);right++)  buffer[right]=list[right];
     sortY(++left,locMid-1);
     sortY(locMid,--right);
-
-    for(int i=left;i<locmid;i++){
+    //left++;
+    //right--;
+    cursor=locMid;
+    for(int i=left;i<locMid;i++){
       limit=0;
-      for(int j=locMid;j<=right;j++){
+      for(int j=cursor;j<=right;j++){
         if (buffer[j]->y <= (buffer[i]->y+pp.distance) && (buffer[j]->y >= buffer[i]->y-pp.distance)){
           minPair=closer(minPair,distance(i,j));
           if(++limit == 6)  break;
@@ -292,10 +285,8 @@ PairofPoint Grid::mergeDistance(int left,int right){
     }
     /*for(int i=locMid;i>=0 && list[i]->x >= (mid-pp.distance);i--){
       for(int j=locMid;j<size && list[j]->x <= (mid+pp.distance);j++){
->>>>>>> 29667c2799f1b7238b695405d9a6e63311bad72b
         if (list[j]->y <= (list[i]->y+pp.distance) && (list[j]->y >= list[i]->y-pp.distance)){
           minPair=closer(minPair,distance(i,j));
-          limit++;
         }
       }
     }*/
@@ -320,7 +311,7 @@ int main(int argc, char *argv[])
   g=new Grid(size);
   tc.start();
   if(way != 0)  closestPair=g->mergeDistance();
-  else          closestPair=g->exhaustiveMinDis();
+  else          closestPair=g->exhaustiveDistance();
   tc.stop();
   cout.setf(ios::fixed,ios::floatfield); //定点格式
   cout<<setprecision(3)<<tc.getTime()<<endl;
