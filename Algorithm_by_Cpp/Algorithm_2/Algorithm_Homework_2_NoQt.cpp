@@ -10,6 +10,8 @@ using namespace std;
 #define MAX 10000
 #define MIN 0
 //#define N 100
+int counter=0;
+int counter1=0;
 
 class TimeCheck{
 public:
@@ -222,11 +224,14 @@ PairofPoint Grid::mergeDistance(int left,int right){
 }
 
   PairofPoint Grid::middleCheck(PairofPoint pp,double mid,int locMid){
+    int limit;
     PairofPoint minPair=pp;
     for(int i=locMid;i>=0 && list[i]->x >= (mid-pp.distance);i--){
-      for(int j=locMid;j<size && list[j]->x <= (mid+pp.distance);j++){
+      limit=0;
+      for(int j=locMid;limit<=6 && j<size && list[j]->x <= (mid+pp.distance);j++){
         if (list[j]->y <= (list[i]->y+pp.distance) && (list[j]->y >= list[i]->y-pp.distance)){
           minPair=closer(minPair,distance(i,j));
+          limit++;
         }
       }
     }
