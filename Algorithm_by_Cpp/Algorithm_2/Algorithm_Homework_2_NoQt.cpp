@@ -1,4 +1,3 @@
-
 #include <iostream>
 using namespace std;
 
@@ -7,7 +6,7 @@ using namespace std;
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
-#define MAX 10000
+#define MAX 1000000
 #define MIN 0
 //#define N 100
 
@@ -216,14 +215,27 @@ void Grid::sortY(int a,int b){
   quickSort(a,b);
 }
 
-PairofPoint Grid::exhaustiveDistance(){
+/*PairofPoint Grid::exhaustiveDistance(){
   for(int i=0;i<size-1;i++){
     for(int j=i;j<size;j++){
       closestPair=closer(closestPair,distance(i,j));
     }
   }
   return closestPair;
+}*/
+
+PairofPoint Grid::exhaustiveDistance(){
+  sortX();
+  for(int i=0;i<size-1;i++){
+    for(int j=i;j<size;j++){
+      if(list[j]->x-list[i]->x > closestPair.distance)  break;
+      closestPair=closer(closestPair,distance(i,j));
+
+    }
+  }
+  return closestPair;
 }
+
 
 PairofPoint Grid::mergeDistance(){
   sortX();
@@ -265,31 +277,36 @@ PairofPoint Grid::mergeDistance(int left,int right){
 
   PairofPoint Grid::combineMiddle(PairofPoint pp,double middle,int locMid){
     PairofPoint minPair=pp;
-    int left,right,cursor;
+    //int left,right;
     int limit;
-    for(left=locMid-1;left>=0 && list[left]->x >= (middle-pp.distance);left--)    buffer[left]=list[left];
+    /*for(left=locMid-1;left>=0 && list[left]->x >= (middle-pp.distance);left--)    buffer[left]=list[left];
     for(right=locMid;right<size && list[right]->x <= (middle+pp.distance);right++)  buffer[right]=list[right];
-    sortY(++left,locMid-1);
-    sortY(locMid,--right);
-    //left++;
-    //right--;
-    cursor=locMid;
-    for(int i=left;i<locMid;i++){
+    sortY(++left,--right);
+    for(int i=left;i<=right;i++){
+      if(buffer[i]->x >= middle)  continue;
       limit=0;
-      for(int j=cursor;j<=right;j++){
-        if (buffer[j]->y <= (buffer[i]->y+pp.distance) && (buffer[j]->y >= buffer[i]->y-pp.distance)){
+      for(int j=i;j>=left;j--){
+        if(buffer[j]->x < middle)  continue;
+        if(buffer[j]->y < buffer[i]->y-pp.distance)  break;
+        minPair=closer(minPair,distance(i,j));
+        if(++limit == 6)  break;
+      }
+      for(int j=i;j<=right;j++){
+        if(buffer[j]->x < middle)  continue;
+        if(buffer[j]->y > buffer[i]->y+pp.distance)  break;
+        minPair=closer(minPair,distance(i,j));
+        if(++limit == 6)  break;
+      }
+    }*/
+    for(int i=locMid;i>=0 && list[i]->x >= (middle-pp.distance);i--){
+      limit=0;
+      for(int j=locMid;j<size && list[j]->x <= (middle+pp.distance);j++){
+        if (list[j]->y <= (list[i]->y+pp.distance) && (list[j]->y >= list[i]->y-pp.distance)){
           minPair=closer(minPair,distance(i,j));
-          if(++limit == 6)  break;
+          if(++limit == 6) break;
         }
       }
     }
-    /*for(int i=locMid;i>=0 && list[i]->x >= (mid-pp.distance);i--){
-      for(int j=locMid;j<size && list[j]->x <= (mid+pp.distance);j++){
-        if (list[j]->y <= (list[i]->y+pp.distance) && (list[j]->y >= list[i]->y-pp.distance)){
-          minPair=closer(minPair,distance(i,j));
-        }
-      }
-    }*/
     return minPair;
   }
 
