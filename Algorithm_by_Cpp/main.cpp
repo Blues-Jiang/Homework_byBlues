@@ -71,18 +71,19 @@ class Grid{
 private:
   int size;
   Point** list;
+  Point** listY;
   Point** buffer;
   PairofPoint closestPair;
 
   void exchange(int i,int j);
-  void exchbuffer(int i,int j);
+  void exchange(int i,int j,Point** a);
   PairofPoint distance(int a,int b);
   //merge sort is to sort by x,the source is the List itself,sort list by x line before devide and conquer.
-  void mergeCombine(int first,int middle,int last);
-  void mergeSort(int first,int last);
+  void mergeCombine(int first,int middle,int last,bool xory);//TRUE->X FALSE->Y
+  void mergeSort(int first,int last,bool xory);
   //quick sort is to sort by Y.when everytime we neet to combine the left part and right part,sort only (m-d,m+d) in another buffer,the list is still sort by X.
-  void quickSort(int first,int last);
-  int partition(int first,int last);
+  //void quickSort(int first,int last);
+  //int partition(int first,int last);
 
   PairofPoint exhaustiveMinDis();
   PairofPoint mergeDistance(int left,int right);
@@ -109,11 +110,14 @@ Grid::Grid(int size){
   srand(time(NULL));
   this->size = size;
   list = new Point* [size];
+  listY = new Point* [size];
   buffer = new Point* [size];
   closestPair=PairofPoint();
   for(int i=0;i<size;i++){
     list[i]=new Point(i+1,(rand()%MAX+MIN),(rand()%MAX+MIN));
+    listY[i]=list[i];
   }
+
 }
 
 Grid::Grid(){
@@ -127,6 +131,7 @@ Grid::~Grid(){
     delete list[i];
   }
   delete[] list;
+  delete[] listY;
   delete[] buffer;
 }
 
@@ -136,10 +141,10 @@ void Grid::exchange(int i,int j){
   list[j]=temp;
 }
 
-void Grid::exchbuffer(int i,int j){
-  Point* temp=buffer[i];
-  buffer[i]=buffer[j];
-  buffer[j]=temp;
+void Grid::exchange(int i,int j,Point** a){
+  Point* temp=a[i];
+  a[i]=a[j];
+  a[j]=temp;
 }
 
 int Grid::getSize(){
@@ -159,63 +164,56 @@ bool Grid::isXSorted(){//最后判断各个点的x坐标是否已经成功排序
 
 bool Grid::isYSorted(int bottom,int top){
   for(int i=bottom;i<top;i++){
-    if( buffer[i]->y > buffer[i+1]->y ) return false;
+    if( listY[i]->y > listY[i+1]->y ) return false;
   }
   return true;
 }
 
 
-void Grid::mergeCombine(int first,int middle,int last){
+void Grid::mergeCombine(int first,int middle,int last,bool xory){
   int i=first,j=middle+1,k=first;
-  for(;i<=middle && j<=last;k++){
-    if(list[i]->x <= list[j]->x)  buffer[k] = list[i++];
-    else                    buffer[k] = list[j++];
+  if (xory) {
+    for(;i<=middle && j<=last;k++){
+      if(list[i]->x <= list[j]->x)  buffer[k] = list[i++];
+      else                    buffer[k] = list[j++];
+    }
+    while(i<=middle)  buffer[k++] = list[i++];
+    while(j<=last)    buffer[k++] = list[j++];
+    for(k=first;k<=last;k++)  list[k]=buffer[k];
+
   }
-  while(i<=middle)  buffer[k++] = list[i++];
-  while(j<=last)    buffer[k++] = list[j++];
-  for(k=first;k<=last;k++)  list[k]=buffer[k];
+  else{
+    for(;i<=middle && j<=last;k++){
+      if(listY[i]->y <= listY[j]->y)  buffer[k] = listY[i++];
+      else                    buffer[k] = listY[j++];
+    }
+    while(i<=middle)  buffer[k++] = listY[i++];
+    while(j<=last)    buffer[k++] = listY[j++];
+    for(k=first;k<=last;k++)  listY[k]=buffer[k];
+
+  }
 }
 
-void Grid::mergeSort(int first,int last){
+
+void Grid::mergeSort(int first,int last,bool xory){
   if(first < last){
     int middle = (first + last)/2;
-    mergeSort(first,middle);
-    mergeSort(middle+1,last);
-    mergeCombine(first,middle,last);
+    mergeSort(first,middle,xory);
+    mergeSort(middle+1,last,xory);
+    mergeCombine(first,middle,last,xory);
   }
 }
-
-void Grid::quickSort(int first,int last){//过程中用于处理Y轴顺序
-  if (first >= last)  return;//退出条件
-  int key=partition(first,last);
-  quickSort(first,key-1);
-  quickSort(key+1,last);
-}
-
-int Grid::partition(int first,int last){
-  int key=first;
-  int i=first+1,j=last;
-  while(1){
-    while(buffer[key]->y>=buffer[i]->y && i<last) i++;
-    while(buffer[key]->y<=buffer[j]->y && j>first) j--;
-    if(i>=j)  break;
-    exchbuffer(i,j);
-  }
-  exchbuffer(key,j);
-  key=j;
-  return key;
-}
-
 
 void Grid::sortX(){
-  mergeSort(0,size-1);
+  mergeSort(0,size-1,true);
 }
 
 void Grid::sortY(int a,int b){
-  quickSort(a,b);
+  mergeSort(a,b,false);
+
 }
 
-/*PairofPoint Grid::exhaustiveDistance(){
+/*airofPoint Grid::exhaustiveDistance(){
   for(int i=0;i<size-1;i++){
     for(int j=i;j<size;j++){
       closestPair=closer(closestPair,distance(i,j));
@@ -230,7 +228,6 @@ PairofPoint Grid::exhaustiveDistance(){
     for(int j=i;j<size;j++){
       if(list[j]->x-list[i]->x > closestPair.distance)  break;
       closestPair=closer(closestPair,distance(i,j));
-
     }
   }
   return closestPair;
@@ -271,34 +268,33 @@ PairofPoint Grid::mergeDistance(int left,int right){
   else{
     minPair=distance(0,0);
   }
-
   return minPair;
 }
 
   PairofPoint Grid::combineMiddle(PairofPoint pp,double middle,int locMid){
     PairofPoint minPair=pp;
-    //int left,right;
+    int left,right;
     int limit;
-    /*for(left=locMid-1;left>=0 && list[left]->x >= (middle-pp.distance);left--)    buffer[left]=list[left];
-    for(right=locMid;right<size && list[right]->x <= (middle+pp.distance);right++)  buffer[right]=list[right];
+    for(left=locMid-1;left>=0 && list[left]->x >= (middle-pp.distance);left--)    listY[left]=list[left];
+    for(right=locMid;right<size && list[right]->x <= (middle+pp.distance);right++)  listY[right]=list[right];
     sortY(++left,--right);
     for(int i=left;i<=right;i++){
-      if(buffer[i]->x >= middle)  continue;
+      if(listY[i]->x >= middle)  continue;
       limit=0;
       for(int j=i;j>=left;j--){
-        if(buffer[j]->x < middle)  continue;
-        if(buffer[j]->y < buffer[i]->y-pp.distance)  break;
+        if(listY[j]->x < middle)  continue;
+        if(listY[j]->y < listY[i]->y-pp.distance)  break;
         minPair=closer(minPair,distance(i,j));
         if(++limit == 6)  break;
       }
       for(int j=i;j<=right;j++){
-        if(buffer[j]->x < middle)  continue;
-        if(buffer[j]->y > buffer[i]->y+pp.distance)  break;
+        if(listY[j]->x < middle)  continue;
+        if(listY[j]->y > listY[i]->y+pp.distance)  break;
         minPair=closer(minPair,distance(i,j));
         if(++limit == 6)  break;
       }
-    }*/
-    for(int i=locMid;i>=0 && list[i]->x >= (middle-pp.distance);i--){
+    }
+    /*for(int i=locMid;i>=0 && list[i]->x >= (middle-pp.distance);i--){
       limit=0;
       for(int j=locMid;j<size && list[j]->x <= (middle+pp.distance);j++){
         if (list[j]->y <= (list[i]->y+pp.distance) && (list[j]->y >= list[i]->y-pp.distance)){
@@ -306,7 +302,7 @@ PairofPoint Grid::mergeDistance(int left,int right){
           if(++limit == 6) break;
         }
       }
-    }
+    }*/
     return minPair;
   }
 
@@ -331,8 +327,8 @@ int main(int argc, char *argv[])
   else          closestPair=g->exhaustiveDistance();
   tc.stop();
   cout.setf(ios::fixed,ios::floatfield); //定点格式
-  cout<<setprecision(3)<<tc.getTime()<<endl;
-  cout<<"the pair of points is:<"<<setprecision(0)<<closestPair.a->x<<","<<closestPair.a->y<<">,<"<<closestPair.b->x<<","<<closestPair.b->y<<">"<<endl;
-  cout<<"Cloest distance:"<<setprecision(3)<<closestPair.distance<<endl;
+  cout<<"Take time:"<<setprecision(3)<<tc.getTime()<<endl;
+  //cout<<"the pair of points is:<"<<setprecision(0)<<closestPair.a->x<<","<<closestPair.a->y<<">,<"<<closestPair.b->x<<","<<closestPair.b->y<<">"<<endl;
+  //cout<<"Cloest distance:"<<setprecision(3)<<closestPair.distance<<endl;
   return 0;
 }
