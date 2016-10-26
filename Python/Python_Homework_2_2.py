@@ -5,7 +5,6 @@ import types
 
 def encrypt(text):
     text = text.lower()
-    #buffer = text.split(' ')
     buffer = re.split(r'\s+',text)
     for i in range(len(buffer)):
         if re.match(r'^qu',buffer[i]):
@@ -20,6 +19,6 @@ def encrypt(text):
     result = result.join(buffer)
     return result
 
-plainText = input("Please input the proclaimed in writing(plain text):")
+plainText = input("Please input the proclaimed in writing:")
 ciphertext = encrypt(plainText)
-print(ciphertext)
+print("Pig Latin:",ciphertext)

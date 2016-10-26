@@ -1,4 +1,4 @@
-# Python Homework 2_1
+# Python Homework 2_3
 # coding = utf-8
 
 name = input("Please input your name:")
