@@ -31,8 +31,7 @@ public:
 class QueenChess{
 private:
   int size;
-  int** chessboard;
-  int* queenlist;
+  int* queenlist;//queenlist[0] is the number of chess already on board,chess list from 1 to size,the point is x,value is y
   bool isSafe(int x,int y);
 
 
@@ -46,31 +45,16 @@ public:
 
 QueenChess::QueenChess(){
   size = 8;
-  chessboard = new int*[size];
-  for(int i=0;i<size;i++){
-    chessboard[i] = new int[size];
-    for(int j=0;j<size;j++){
-      chessboard[i][j] = 0;
-    }
-  }
+  queenlist = new int[size+1];
 }
 
 QueenChess::QueenChess(int size){
   this->size = size;
-  chessboard = new int*[this->size];
-  for(int i=0;i<this->size;i++){
-    chessboard[i] = new int[this->size];
-    for(int j=0;j<this->size;j++){
-      chessboard[i][j] = 0;
-    }
-  }
+
 }
 
 QueenChess::~QueenChess(){
-  for(int i=0;i<size;i++){
-    delete[] chessboard[i];
-  }
-  delete[] chessboard;
+  delete[] queenlist;
 }
 
 bool QueenChess::isSafe(int x,int y){
