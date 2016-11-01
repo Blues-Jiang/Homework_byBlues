@@ -9,6 +9,7 @@ using namespace std;
 #include <sys/time.h>
 #define CHESSSIZE 8
 
+QueenChess* initialChess();
 
 class TimeCheck{
 public:
@@ -35,7 +36,6 @@ private:
   int* queenlist;//queenlist[0] is the number of chess already on board,chess list from 1 to size,the point is x,value is y
   bool isSafe(int x,int y);
 
-
 public:
   QueenChess();
   QueenChess(int size);
@@ -43,9 +43,10 @@ public:
   bool isSucceed();
   bool findASolusion();
   bool findNextSolusion();
+  bool findFromRest();
   void clearAll();
-
-
+  void printCmd();
+  bool setChess(int x,int y);
 };
 
 QueenChess::QueenChess(){
@@ -88,7 +89,6 @@ bool QueenChess::isSucceed(){
   }
   return true;
 }
-
 
 void QueenChess::clearAll(){
   for(int i=0;i<=size;i++){
@@ -170,9 +170,45 @@ bool QueenChess::findFromRest(){
     else            return false;
 }
 
+void QueenChess::printCmd(){
+  cout<<"**********Result of "<<size<<" queens puzzle**********"<<endl;
+  for(int i=1;i<=size;i++){
+    for(int j=1;j<=size;j++){
+      if(j == queenlist[i]) cout<<"# ";
+      else                  cout<<"* ";
+    }
+    cout<<endl;
+    cout<<endl;
+  }
+}
+
+bool QueenChess::setChess(int x,int y){
+  if( x>size || x<1 || y>size || y<1 )  return false;
+  if( queenlist[x] != 0 ) return false;
+  queenlist[x]=y;
+  queenlist[0]++;
+  return true;
+}
+
+QueenChess* initialChess(){
+  int size,x,y;
+  cout<<"Size of queen";
+  cin<<size;
+  QueenChess qc = new QueenChess(size);
+  cout<<"Please input the coordinate of queen(input 0 to interrupt):";
+  for(int i=1;i<=size;i++){
+    cin<<x<<y;
+    if(x == 0 || y == 0) break;
+    if(!qc.setChess(x,y)) cout<<"The coordinate of queen ("<<x<<","<<y") is obey the rules,ignore this queen.";
+  }
+  cout<<"Initial succeed";
+  return qc;
+}
+
 int main(int argc, char *argv[])
 {
-
+  QueenChess* chessboard=initialChess();
+  
 
   return 0;
 }
