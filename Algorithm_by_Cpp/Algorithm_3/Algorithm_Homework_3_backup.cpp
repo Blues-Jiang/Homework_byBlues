@@ -1,7 +1,6 @@
 #include <iostream>
 using namespace std;
-#include <unistd.h>
-#include <cstdio>
+
 #include <iomanip>
 #include <cmath>
 #include <vector>
@@ -9,6 +8,8 @@ using namespace std;
 #include <time.h>
 #include <sys/time.h>
 #define CHESSSIZE 8
+
+QueenChess* initialChess();
 
 class TimeCheck{
 public:
@@ -45,10 +46,7 @@ public:
   bool findFromRest();
   void clearAll();
   void printCmd();
-  void printCandidate();
   bool setChess(int x,int y);
-  int getNumOfQueen();
-  int getSize();
 };
 
 QueenChess::QueenChess(){
@@ -89,8 +87,7 @@ bool QueenChess::isSucceed(){
       else                        return false;
     }
   }
-  if(queenlist[0] == size)  return true;
-  else                      return false;
+  return true;
 }
 
 void QueenChess::clearAll(){
@@ -108,24 +105,23 @@ bool QueenChess::findASolusion(){
       queenlist[0]++;
       queenlist[x]=y;
     }
-    else if(y >= size){
-      if(queenlist[0] == 0) break;
-      else queenlist[0]--;
+    else if(y == size){
+      queenlist[0]--;
       queenlist[x] = 0;
     }
     else{
       queenlist[x]++;
     }
-  }while(queenlist[0] >= 0 && queenlist[0] < size);
+  }while(queenlist[0] > 0 || queenlist[0] < size);
 
-  if(isSucceed()) return true;
-  else            return false;
+  if(queenlist[0] == 0) return false;
+  else                  return true;
   }
 
 bool QueenChess::findNextSolusion(){
   int x,y;
-  queenlist[size]++;
-  queenlist[0]=size-1;
+  queenlist[queenlist[0]] = 0;
+  queenlist[0]--;
   do{
     x=queenlist[0]+1;
     y=queenlist[x]+1;
@@ -133,18 +129,17 @@ bool QueenChess::findNextSolusion(){
       queenlist[0]++;
       queenlist[x]=y;
     }
-    else if(y >= size){
-      if(queenlist[0] == 0) break;
-      else queenlist[0]--;
+    else if(y == size){
+      queenlist[0]--;
       queenlist[x] = 0;
     }
     else{
       queenlist[x]++;
     }
-  }while(queenlist[0] >= 0 && queenlist[0] < size);
+  }while(queenlist[0] > 0 || queenlist[0] < size);
 
-  if(isSucceed()) return true;
-  else            return false;
+  if(queenlist[0] == 0) return false;
+  else                  return true;
 }
 
 bool QueenChess::findFromRest(){
@@ -162,14 +157,14 @@ bool QueenChess::findFromRest(){
         vxaddr++;
         queenlist[x]=y;
       }
-      else if(y >= size){
+      else if(y == size){
         vxaddr--;
         queenlist[x] = 0;
       }
       else{
         queenlist[x]++;
       }
-    }while(vxaddr >= 0 && vxaddr < vx.size());
+    }while(vxaddr >= 0 || vxaddr < vx.size());
 
     if(isSucceed()) return true;
     else            return false;
@@ -183,13 +178,7 @@ void QueenChess::printCmd(){
       else                  cout<<"* ";
     }
     cout<<endl;
-  }
-}
-
-void QueenChess::printCandidate(){
-  for(int i=1;i<=size;i++){
-    if(queenlist[i] == 0) break;
-    cout<<"("<<i<<","<<queenlist[i]<<") ";
+    cout<<endl;
   }
 }
 
@@ -201,75 +190,25 @@ bool QueenChess::setChess(int x,int y){
   return true;
 }
 
-int QueenChess::getNumOfQueen(){
-  int temp=0;
+QueenChess* initialChess(){
+  int size,x,y;
+  cout<<"Size of queen";
+  cin<<size;
+  QueenChess qc = new QueenChess(size);
+  cout<<"Please input the coordinate of queen(input 0 to interrupt):";
   for(int i=1;i<=size;i++){
-    if(queenlist[i] != 0 && queenlist[i] <=size)  temp++;
+    cin<<x<<y;
+    if(x == 0 || y == 0) break;
+    if(!qc.setChess(x,y)) cout<<"The coordinate of queen ("<<x<<","<<y") is obey the rules,ignore this queen.";
   }
-  queenlist[0]=temp;
-  return queenlist[0];
-}
-
-int QueenChess::getSize(){
-  return size;
+  cout<<"Initial succeed";
+  return qc;
 }
 
 int main(int argc, char *argv[])
 {
-  int size=8,x,y;
-  int mode=0;
-  cout<<"Size of queen:";
-  cin>>size;
-  QueenChess chessboard = QueenChess(size);
-  cout<<"Mode 0:Print result one by one."<<endl;
-  cout<<"Mode 1:Input a list of queens, check it."<<endl;
-  cout<<"Mode:";
-  cin>>mode;
-  if(1 == mode){
-    cout<<"Please input the coordinate of queen(input 0 to interrupt):";
-    for(int i=1;i<=size;i++){
-      cin>>x;
-      if(x == 0) break;
-      cin>>y;
-      if(y == 0) break;
-      if(!chessboard.setChess(x,y)) cout<<"The coordinate of queen ("<<x<<","<<y<<") is obey the rules,ignore this queen.";
-    }
-    cout<<"Your input is:"<<endl;
-    chessboard.printCmd();
-    cout<<"You have input "<<chessboard.getNumOfQueen()<<" queens.The size of queens is "<<chessboard.getSize()<<"."<<endl;
-    if(chessboard.getNumOfQueen() == chessboard.getSize()){
-      if(chessboard.isSucceed())  cout<<"It is a solution.Succeed!!!"<<endl;
-      else  cout<<"Sorry,it seems have some of queens obey the rules."<<endl;
-    }
-    else{
-      if(chessboard.findFromRest()){
-        cout<<"Solusion found."<<endl;
-        chessboard.printCmd();
-      }
-      else{
-        cout<<"We can't find a solution of your provided.Failed."<<endl;
-      }
-    }
-  }
-  else if(0 == mode){
-    tc.start();
-    cout<<"Find solusion one by one."<<endl;
-    int number=1;
-    cout<<"No."<<number<<endl;
-    chessboard.findASolusion();
-    chessboard.printCmd();
-    //usleep(200000);
-    while(chessboard.findNextSolusion()){
-      cout<<"No."<<++number<<endl;
-      chessboard.printCmd();
-      //usleep(200000);
-    }
-    tc.stop();
-    cout<<"There are "<<number<<" result in "<<size<<" queens chess."<<endl;
-    cout.setf(ios::fixed,ios::floatfield); //定点格式
-    cout<<"Take time:"<<setprecision(3)<<tc.getTime()<<endl;
-  }
-
+  QueenChess* chessboard=initialChess();
+  
 
   return 0;
 }
