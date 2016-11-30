@@ -1,12 +1,19 @@
 #include <iostream>
+#include <fstream>
 using namespace std;
+#include <string>
+#include <sstream>
+#include <queue>
+#include <vector>
 #include <iomanip>
-#include <stdlib.h>
-#include <cmath>
-#include <stack>
 #include <time.h>
 #include <sys/time.h>
 #define MAX 99
+const int size = 256;
+
+char filename[]="text.txt";
+char cmpfilename[]="text.txt.hmc";
+char dcfilename[]="text.dc.txt";
 
 class TimeCheck{
 public:
@@ -24,146 +31,177 @@ public:
     takeTime /= 1000;//单位为ms
     return takeTime;
   }
+  void printTime(){
+    cout.setf(ios::fixed,ios::floatfield); //定点格式
+    cout<<"Take time:"<<setprecision(3)<<getTime()<<"ms"<<endl;
+  }
 } tc;
 
-class bag{
-private:
-  class good{
-  public:
-    int weight;
-    int value;
-    good(){weight=0;value=0;}
-    good(int w,int v){weight=w;value=v;}
-  };
-
-  good **goodList;
-  int **table;
-  int sumWeight;
-  int size;
-
+class node{
 public:
-  stack<int> result;
-  bag(){}
-  bag(int n,int W);
-  ~bag();
-  void DP();
-  void findResult();
-  void printList();
-  void printValueTable();
-  void printResult();
+  int freq;  //weight value of node
+  char value; //thos node mean 'ch'
+  node *left,*right,*parent;
+  node(char value,int freq=0){
+    this->value=value;
+    this->freq = freq;
+    left = NULL;
+    right = NULL;
+    parent = NULL;
+  }
+  node(node *l,node *r){
+    left = l;
+    right = r;
+    value = '\0';
+    freq = l->freq + r->freq;
+  }
+  node(){
+    value = 0;
+    freq = 0;
+    left = NULL;
+    right = NULL;
+    parent = NULL;
+  }
+  bool isLeaf(){
+    return (NULL == left && NULL == right);
+  }
 };
 
-bag::bag(int n,int W){
-  srand(time(NULL));
-  sumWeight = W;
-  size = n;
-  goodList = new good*[size+1];
-  for(int i=0;i<size;i++){
-    goodList[i] = new good(rand()%sumWeight+1,rand()%MAX+1);
+struct compare{
+  bool operator()(node *x,node *y) const{
+    return x->freq > y->freq;
   }
-  table = new int*[size];
+};
+
+class HuffmanTree{
+private:
+  node *root;
+  priority_queue<node*,vector<node*>,compare> hqueue;
+  string *code;
+  void buildCodeTable(node *x,string str);
+public:
+  HuffmanTree();
+  //~HuffmanTree();
+
+  void initialHT();
+  void buildCodeTable();
+  void printCodeTable();
+  void Compression();
+  void Decompression();
+};
+
+HuffmanTree::HuffmanTree(){
+  root = NULL;
+  code = new string[size];
+}
+
+void HuffmanTree::initialHT(){
+  int *freqlist=new int[size];
+  //Read File
+  ifstream fin(filename);
+  //ifstream fin(filename,ios_base::binary);//for binary file
+  if(!fin.is_open()){
+    cout<<"Error when open file."<<endl;
+    return;
+  }
+  //count every charactor's freqency.
+  while(!fin.eof()){
+    char ch;
+    fin.get(ch);
+    freqlist[(int)ch]++;
+  }
+  fin.close();
+
   for(int i=0;i<size;i++){
-    table[i]=new int[sumWeight+1];
+    if(0 == freqlist[i])  continue;
+    node *temp = new node((char)i,freqlist[i]);
+    hqueue.push(temp);
+  }
+
+  //Finished every leaf's initial.
+  node *x,*y;
+  while(hqueue.size() > 1){
+    x = hqueue.top();
+    hqueue.pop();
+    y = hqueue.top();
+    hqueue.pop();
+    node *temp = new node(x,y);
+    x->parent = temp;
+    y->parent = temp;
+    hqueue.push(temp);
+  }
+  root = hqueue.top();
+  hqueue.pop();
+}
+//void HuffmanTree::importCodeTable(){
+//}
+
+void HuffmanTree::buildCodeTable(){
+  buildCodeTable(root,"");
+}
+
+void HuffmanTree::buildCodeTable(node *x,string str){
+  if(x->isLeaf()){
+    code[(int)x->value] = str;
+    return;
+  }
+  buildCodeTable(x->left,str+'0');
+  buildCodeTable(x->right,str+'1');
+}
+
+void HuffmanTree::printCodeTable(){
+  if(code == NULL){
+    cout<<"ERROR"<<endl;
+    return;
+  }
+  for(int i=0;i<128;i++){
+    if(code[i].empty()) continue;
+    cout<<i<<'('<<(char)i<<"):"<<code[i]<<endl;
   }
 }
 
-bag::~bag(){
-  for(int i=0;i<size;i++){
-    delete[] table[i];
-    delete  goodList[i];
+void HuffmanTree::Compression(){
+  initialHT();
+  buildCodeTable();
+  //for binary file
+  ifstream fin(filename, ios_base::binary);
+  ofstream fout(cmpfilename, ios_base::binary);
+
+  char temp;
+  while (!fin.eof()) {
+    fin.get(temp);
+    fout<<code[(int)temp];
   }
-  delete[] table;
-  delete[] goodList;
+
+  fin.close();
+  fout.close();
 }
 
-void bag::DP(){
-  for(int i=0;i<size;i++){
-    table[i][0]=0;
-  }
-  for(int i=0;i<size;i++){
-    for(int w=1;w<=sumWeight;w++){
-      if(goodList[i]->weight > w){
-        table[i][w] = (i!=0)?table[i-1][w]:0;
-      }
-      else{
-        if(i==0)  table[i][w] = goodList[i]->value;
-        else if( table[i-1][w] > (table[i-1][w-goodList[i]->weight]+goodList[i]->value) ){
-          table[i][w] = table[i-1][w];
-        }
-        else{
-          table[i][w] = table[i-1][w-goodList[i]->weight]+goodList[i]->value;
-        }
-      }
-    }
-  }
-}
+void HuffmanTree::Decompression(){
+  ifstream fin(cmpfilename, ios_base::binary);
+  ofstream fout(dcfilename, ios_base::binary);
 
-void bag::findResult(){
-  for(int i=size-1,w=sumWeight;i>=0;i--){
-    if(i == 0){
-       if(table[i][w] > 0) result.push(i);
-    }
-    else if(table[i][w] == table[i-1][w-goodList[i]->weight] + goodList[i]->value){
-        result.push(i);
-        w -= goodList[i]->weight;
-    }
-  }
-}
-
-void bag::printList(){
-    cout<<left<<setw(8)<<"No."<<left<<setw(8)<<"Weight"<<left<<setw(8)<<"Value"<<endl;
-    for(int i=0;i<size;i++){
-      //cout<<left<<setw(8)<<(char)(i+65)<<left<<setw(8)<<goodList[i]->weight<<left<<setw(8)<<goodList[i]->value<<endl;
-      cout<<left<<setw(8)<<(i+1)<<left<<setw(8)<<goodList[i]->weight<<left<<setw(8)<<goodList[i]->value<<endl;
-    }
-}
-
-void bag::printValueTable(){
-  cout<<left<<setw(4)<<"n\\w";
-  for(int i=0;i<=sumWeight;i++) cout<<left<<setw(4)<<i;
-  cout<<endl;
-  for(int i=0;i<size;i++){
-    cout<<left<<setw(4)<<(i+1);
-    for(int j=0;j<=sumWeight;j++) cout<<left<<setw(4)<<table[i][j];
-    cout<<endl;
-  }
-}
-
-void bag::printResult(){
-  cout<<"Result:";
-  while(1){
-    //char temp=result.top() + 65;
-    int temp=result.top() + 1;
-    result.pop();
-    cout<<temp;
-    if(result.empty()){
-      cout<<endl;
-      break;
-    }
-    else  cout<<',';
-  }
+  fin.close();
+  fout.close();
 }
 
 int main(int argc, char *argv[])
 {
-  int w,n;
-  cout<<"Please input the max weight of bag:";
-  cin>>w;
-  cout<<"Please input the number of goods:";
-  cin>>n;
-  bag x=bag(n,w);
+  HuffmanTree ht=HuffmanTree();
+
   tc.start();
-    x.DP();
-    x.findResult();
+    //ht.Compression();
+    ht.initialHT();
+    ht.buildCodeTable();
+    ht.printCodeTable();
   tc.stop();
-  cout.setf(ios::fixed,ios::floatfield); //定点格式
-  cout<<"Take time:"<<setprecision(3)<<tc.getTime()<<endl;
-
-  x.printList();
-  cout<<endl;
-  x.printValueTable();
-  cout<<endl;
-  x.printResult();
-
+  cout<<"Compression complete."<<endl;
+  //tc.printTime();
+  /*tc.start();
+    ht.Decompression();
+  tc.stop();
+  cout<<"Decompression complete."<<endl;
+  tc.printTime();*/
+  // ht.printCodeTable();
   return 0;
 }
