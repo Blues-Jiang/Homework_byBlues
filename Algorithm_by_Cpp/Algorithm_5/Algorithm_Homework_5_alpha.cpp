@@ -3,6 +3,7 @@
 using namespace std;
 #include <string>
 #include <sstream>
+#include <regex>
 #include <queue>
 #include <vector>
 #include <iomanip>
@@ -11,9 +12,13 @@ using namespace std;
 #define MAX 99
 const int size = 256;
 
-char filename[]="text.txt";
-char cmpfilename[]="text.txt.hmc";
-char dcfilename[]="text.dc.txt";
+string orgfilename="cacm.all";
+string cfilename="cacm.all.hmc";
+string dcfilename="cacm.dc.all";
+
+void updateFilename(){
+  regex re("(*)\\.(*)$");
+}
 
 class TimeCheck{
 public:
@@ -39,12 +44,12 @@ public:
 
 class node{
 public:
-  int freq;  //weight value of node
-  char value; //thos node mean 'ch'
+  int weight;  //weight value of node
+  unsigned char value; //thos node mean 'ch'
   node *left,*right,*parent;
-  node(char value,int freq=0){
+  node(unsigned char value,int freq=0){
     this->value=value;
-    this->freq = freq;
+    this->weight = weight;
     left = NULL;
     right = NULL;
     parent = NULL;
@@ -53,11 +58,11 @@ public:
     left = l;
     right = r;
     value = '\0';
-    freq = l->freq + r->freq;
+    weight = l->weight + r->weight;
   }
   node(){
     value = 0;
-    freq = 0;
+    weight = 0;
     left = NULL;
     right = NULL;
     parent = NULL;
@@ -67,74 +72,101 @@ public:
   }
 };
 
-struct compare{
+struct compare{//For priority queue
   bool operator()(node *x,node *y) const{
-    return x->freq > y->freq;
+    return x->weight > y->weight;
   }
 };
 
 class HuffmanTree{
 private:
   node *root;
-  priority_queue<node*,vector<node*>,compare> hqueue;
-  string *code;
+  priority_queue<node*,vector<node*>,compare> pq;
+  string *codeTable;
+  int *freqTable;
+
+  void deleteNode(node *x);
   void buildCodeTable(node *x,string str);
 public:
   HuffmanTree();
-  //~HuffmanTree();
+  ~HuffmanTree();
+  node* getRoot();
+  void Compression();
+  void Decompression();
 
   void initialHT();
   void buildCodeTable();
   void printCodeTable();
-  void Compression();
-  void Decompression();
+
 };
 
 HuffmanTree::HuffmanTree(){
   root = NULL;
-  code = new string[size];
+  codeTable = new string[size];
+  freqTable = new int[size];
+  for(int i=0;i<size;i++) freqTable[i] = 0;
 }
 
-void HuffmanTree::initialHT(){
-  int *freqlist=new int[size];
+HuffmanTree::~HuffmanTree(){
+  deleteNode(root);
+  delete[] codeTable;
+  delete[] freqTable;
+  while(!pq.empty())  pq.pop();
+}
+
+void HuffmanTree::deleteNode(node *x){
+  if(NULL == x) return;
+  deleteNode(x->left);
+  deleteNode(x->right);
+  delete x;
+}
+
+node* HuffmanTree::getRoot(){
+  return root;
+}
+
+void HuffmanTree::countFreq(){
+  unsigned char temp;
   //Read File
-  ifstream fin(filename);
-  //ifstream fin(filename,ios_base::binary);//for binary file
+  ifstream fin(orgfilename.c_str(),ios_base::in);
   if(!fin.is_open()){
     cout<<"Error when open file."<<endl;
     return;
   }
   //count every charactor's freqency.
   while(!fin.eof()){
-    char ch;
-    fin.get(ch);
-    freqlist[(int)ch]++;
+
+    fin.get(temp);
+    freqTable[(int)temp]++;
   }
   fin.close();
+}
 
+void HuffmanTree::initialHuffmanTree(){//initial the Huffman Tree table based on freqency table.
   for(int i=0;i<size;i++){
-    if(0 == freqlist[i])  continue;
-    node *temp = new node((char)i,freqlist[i]);
+    if(0 == freqTable[i])  continue;
+    node *temp = new node((unsigned char)i,freqlist[i]);
     hqueue.push(temp);
   }
-
   //Finished every leaf's initial.
   node *x,*y;
-  while(hqueue.size() > 1){
-    x = hqueue.top();
-    hqueue.pop();
-    y = hqueue.top();
-    hqueue.pop();
+  while(pq.size() > 1){
+    x = pq.top();
+    pq.pop();
+    y = pq.top();
+    pq.pop();
     node *temp = new node(x,y);
     x->parent = temp;
     y->parent = temp;
     hqueue.push(temp);
   }
-  root = hqueue.top();
-  hqueue.pop();
+  root = pq.top();
+  pq.pop();
 }
-//void HuffmanTree::importCodeTable(){
-//}
+
+void HuffmanTree::DLRtraverse(){
+  
+}
 
 void HuffmanTree::buildCodeTable(){
   buildCodeTable(root,"");
@@ -149,59 +181,19 @@ void HuffmanTree::buildCodeTable(node *x,string str){
   buildCodeTable(x->right,str+'1');
 }
 
-void HuffmanTree::printCodeTable(){
-  if(code == NULL){
-    cout<<"ERROR"<<endl;
-    return;
-  }
-  for(int i=0;i<128;i++){
-    if(code[i].empty()) continue;
-    cout<<i<<'('<<(char)i<<"):"<<code[i]<<endl;
-  }
-}
-
-void HuffmanTree::Compression(){
-  initialHT();
-  buildCodeTable();
-  //for binary file
-  ifstream fin(filename, ios_base::binary);
-  ofstream fout(cmpfilename, ios_base::binary);
-
-  char temp;
-  while (!fin.eof()) {
-    fin.get(temp);
-    fout<<code[(int)temp];
-  }
-
-  fin.close();
-  fout.close();
-}
-
-void HuffmanTree::Decompression(){
-  ifstream fin(cmpfilename, ios_base::binary);
-  ofstream fout(dcfilename, ios_base::binary);
-
-  fin.close();
-  fout.close();
-}
-
 int main(int argc, char *argv[])
 {
   HuffmanTree ht=HuffmanTree();
 
   tc.start();
     //ht.Compression();
-    ht.initialHT();
-    ht.buildCodeTable();
-    ht.printCodeTable();
   tc.stop();
   cout<<"Compression complete."<<endl;
-  //tc.printTime();
-  /*tc.start();
-    ht.Decompression();
+  tc.printTime();
+  tc.start();
+    //ht.Decompression();
   tc.stop();
   cout<<"Decompression complete."<<endl;
-  tc.printTime();*/
-  // ht.printCodeTable();
+  tc.printTime();
   return 0;
 }
