@@ -165,7 +165,7 @@ void HuffmanTree::initialHuffmanTree(){//initial the Huffman Tree table based on
 }
 
 void HuffmanTree::DLRtraverse(){
-  
+
 }
 
 void HuffmanTree::buildCodeTable(){
@@ -179,6 +179,10 @@ void HuffmanTree::buildCodeTable(node *x,string str){
   }
   buildCodeTable(x->left,str+'0');
   buildCodeTable(x->right,str+'1');
+}
+
+void HuffmanTree::rebuildHuffmanTree(node *x){//File Header has the node list of Huffman Tree by DLR traverse.Start from root
+
 }
 
 int main(int argc, char *argv[])
@@ -197,3 +201,100 @@ int main(int argc, char *argv[])
   tc.printTime();
   return 0;
 }
+
+
+/*
+
+void HuffmanTree::initialHT(){
+  int *freqlist=new int[size];
+  //Read File
+  ifstream fin(filename);
+  //ifstream fin(filename,ios_base::binary);//for binary file
+  if(!fin.is_open()){
+    cout<<"Error when open file."<<endl;
+    return;
+  }
+  //count every charactor's freqency.
+  while(!fin.eof()){
+    char ch;
+    fin.get(ch);
+    freqlist[(int)ch]++;
+  }
+  fin.close();
+
+  for(int i=0;i<size;i++){
+    if(0 == freqlist[i])  continue;
+    node *temp = new node((char)i,freqlist[i]);
+    hqueue.push(temp);
+  }
+
+  //Finished every leaf's initial.
+  node *x,*y;
+  while(hqueue.size() > 1){
+    x = hqueue.top();
+    hqueue.pop();
+    y = hqueue.top();
+    hqueue.pop();
+    node *temp = new node(x,y);
+    x->parent = temp;
+    y->parent = temp;
+    hqueue.push(temp);
+  }
+  root = hqueue.top();
+  hqueue.pop();
+}
+//void HuffmanTree::importCodeTable(){
+//}
+
+void HuffmanTree::buildCodeTable(){
+  buildCodeTable(root,"");
+}
+
+void HuffmanTree::buildCodeTable(node *x,string str){
+  if(x->isLeaf()){
+    code[(int)x->value] = str;
+    return;
+  }
+  buildCodeTable(x->left,str+'0');
+  buildCodeTable(x->right,str+'1');
+}
+
+void HuffmanTree::printCodeTable(){
+  if(code == NULL){
+    cout<<"ERROR"<<endl;
+    return;
+  }
+  for(int i=0;i<size;i++){
+    if(code[i].empty()) continue;
+    //cout<<i<<'('<<(char)i<<"):"<<code[i]<<endl;
+    cout<<i<<":"<<code[i]<<endl;
+  }
+}
+
+void HuffmanTree::Compression(){
+  initialHT();
+  buildCodeTable();
+  //for binary file
+  ifstream fin(filename, ios_base::binary);
+  ofstream fout(cmpfilename, ios_base::binary);
+
+  char temp;
+  while (!fin.eof()) {
+    fin.get(temp);
+    fout<<code[(int)temp];
+  }
+
+  fin.close();
+  fout.close();
+}
+
+void HuffmanTree::Decompression(){
+  ifstream fin(cmpfilename, ios_base::binary);
+  ofstream fout(dcfilename, ios_base::binary);
+
+  fin.close();
+  fout.close();
+}
+
+
+*/
