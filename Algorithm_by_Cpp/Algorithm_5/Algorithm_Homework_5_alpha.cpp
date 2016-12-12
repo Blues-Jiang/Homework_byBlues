@@ -202,6 +202,30 @@ int main(int argc, char *argv[])
   return 0;
 }
 
+void HuffmanTree::Compression(){
+  initialHT();
+  buildCodeTable();
+  //for binary file
+  ifstream fin(filename, ios_base::binary);
+  ofstream fout(cmpfilename, ios_base::binary);
+
+  char temp;
+  while (!fin.eof()) {
+    fin.get(temp);
+    fout<<code[(int)temp];
+  }
+
+  fin.close();
+  fout.close();
+}
+
+void HuffmanTree::Decompression(){
+  ifstream fin(cmpfilename, ios_base::binary);
+  ofstream fout(dcfilename, ios_base::binary);
+
+  fin.close();
+  fout.close();
+}
 
 /*
 
