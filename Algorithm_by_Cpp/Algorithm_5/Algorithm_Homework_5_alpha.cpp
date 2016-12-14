@@ -2,8 +2,6 @@
 #include <fstream>
 using namespace std;
 #include <string>
-#include <sstream>
-#include <regex>
 #include <queue>
 #include <vector>
 #include <iomanip>
@@ -99,6 +97,7 @@ private:
   string extension;
 
   void deleteNode(node *x);
+  void countFreq();
   void initialHuffmanTree();
   void buildCodeTable(node *x,string str);
   void DLRtraverse(ofstream* fout,node *x,unsigned char* buffer,int* pointer);
@@ -160,8 +159,8 @@ void HuffmanTree::countFreq(){
 void HuffmanTree::initialHuffmanTree(){//initial the Huffman Tree table based on freqency table.
   for(int i=0;i<size;i++){
     if(0 == freqTable[i])  continue;
-    node *temp = new node((unsigned char)i,freqlist[i]);
-    hqueue.push(temp);
+    node *temp = new node((unsigned char)i,freqTable[i]);
+    pq.push(temp);
   }
   //Finished every leaf's initial.
   node *x,*y;
@@ -173,7 +172,7 @@ void HuffmanTree::initialHuffmanTree(){//initial the Huffman Tree table based on
     node *temp = new node(x,y);
     x->parent = temp;
     y->parent = temp;
-    hqueue.push(temp);
+    pq.push(temp);
   }
   root = pq.top();
   pq.pop();
@@ -192,7 +191,7 @@ void HuffmanTree::Compression(string filename=""){
   //Update the Compression filename.
   if(!filename.empty()) orgfilename = filename;
   size_t loc=orgfilename.find_last_of(".");
-  if(loc != npos){
+  if(loc != string::npos){
     //extension = orgfilename.substr(loc+1);
     cfilename = orgfilename + ".hmc";
   }
@@ -211,7 +210,7 @@ void HuffmanTree::Compression(string filename=""){
 
   unsigned char inBuff;
   unsigned char outBuff;
-  int pointer=0;
+  int pointer=1;
 
   DLRtraverse(&fout,root,&outBuff,&pointer);
   fout.write((char *)&outBuff,sizeof(outBuff));
@@ -219,17 +218,19 @@ void HuffmanTree::Compression(string filename=""){
   string::iterator itstr;
 
   //read the origenal file to make the Compression file
-  while (fin.good()){
-    fin.read((char*)&inBuff,sizeof(inBuff));
+  while (fin.read((char*)&inBuff,sizeof(inBuff))){
+    //while(fin.good())
+    //fin.read((char*)&inBuff,sizeof(inBuff));
     itstr = codeTable[inBuff].begin();
     do{
       outBuff = (outBuff<<1) | (*itstr&0x01);
       pointer++;
       if(pointer == sizeof(outBuff)*8){
         fout.write((char *)&outBuff,sizeof(outBuff));
-        pointer = 0;
+        //outBuff = 0;
+        pointer = 1;
       }
-    }while(++itstr != codeTable[inBuff].end());
+    }while(++itstr < codeTable[inBuff].end());
   }
   fout.write((char *)&outBuff,sizeof(outBuff));
 
@@ -240,7 +241,7 @@ void HuffmanTree::Compression(string filename=""){
 void HuffmanTree::DLRtraverse(ofstream* fout,node *x,unsigned char* buffer,int* pointer){
   if(x->isLeaf()){
     *buffer =*buffer << 1 | 0x01;
-    *pointer++;
+    (*pointer)++;
     if(*pointer == sizeof(*buffer)*8){
       fout->write((char *)buffer,sizeof(*buffer));
       *pointer=0;
@@ -252,7 +253,7 @@ void HuffmanTree::DLRtraverse(ofstream* fout,node *x,unsigned char* buffer,int* 
   }
   else{
     *buffer =*buffer << 1 | 0x00;
-    *pointer++;
+    (*pointer)++;
     if(*pointer == sizeof(*buffer)*8){
       fout->write((char *)buffer,sizeof(*buffer));
       *pointer=0;
@@ -268,7 +269,7 @@ void HuffmanTree::rebuildHuffmanTree(ifstream* fin,node *x,unsigned char* buffer
     *pointer = sizeof(*buffer)*8-1;
   }
   unsigned char temp = *buffer >> *pointer & 0x01;
-  *pointer--;
+  (*pointer)--;
   if(temp == 1){//is a leaf
     unsigned char v = *buffer << *pointer;
     fin->read((char *)buffer,sizeof(*buffer));
@@ -292,10 +293,10 @@ void HuffmanTree::Decompression(string filename=""){
 
   //Update the Deompression filename.
   if(!filename.empty()) cfilename = filename;
-  loc=cfilename.find_last_of(".hmc");
-  if(loc != npos) dcfilename = cfilename.substr(0,loc);
+  size_t loc=cfilename.find(".hmc");
+  if(loc != string::npos) dcfilename = cfilename.substr(0,loc);
   loc = dcfilename.find_last_of('.'+extension);
-  if(loc != npos) dcfilename.insert(loc,"_dc");
+  if(loc != string::npos) dcfilename.insert(loc,"_dc");
 
   //some step before build the Compression file.
   ifstream fin(cfilename.c_str(), ios_base::in|ios_base::binary);
@@ -335,17 +336,17 @@ void HuffmanTree::Decompression(string filename=""){
 int main(int argc, char *argv[])
 {
   HuffmanTree ht=HuffmanTree();
-
+  string filename="cacm.all";
   tc.start();
-    //ht.Compression();
+    ht.Compression(filename);
   tc.stop();
   cout<<"Compression complete."<<endl;
   tc.printTime();
-  tc.start();
-    //ht.Decompression();
+  /*tc.start();
+    ht.Decompression();
   tc.stop();
   cout<<"Decompression complete."<<endl;
-  tc.printTime();
+  tc.printTime();*/
   return 0;
 }
 
