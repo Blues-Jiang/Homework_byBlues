@@ -2,8 +2,6 @@
 #include <fstream>
 using namespace std;
 #include <string>
-#include <sstream>
-#include <regex>
 #include <queue>
 #include <vector>
 #include <iomanip>
@@ -37,7 +35,26 @@ public:
 } tc;
 
 void initial(){
+  C = new int*[size];
+  F = new int*[size];
+  for(int i=0;i<size;i++){
+    C[i] = new int[size];
+    F[i] = new int[size];
+  }
+  for(int i=0;i<size;i++){
+    for(int j=0;j<size;j++){
+      C[i][j]=0;
+      F[i][j]=0;
+    }
+  }
+}
 
+void input(){
+  int x,y,weight;
+  do{
+    cin>>x>>y>>weight;
+    C[x][y] = weight;
+  }while(x != 0 && y != 0);
 }
 
 void deleteAll(){
