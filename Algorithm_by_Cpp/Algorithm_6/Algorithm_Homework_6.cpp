@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 using namespace std;
-#include <string>
 #include <queue>
 #include <vector>
 #include <iomanip>
@@ -10,7 +9,11 @@ using namespace std;
 #define MAX 99
 
 int size = 6;
+int maxFlow;
 int **C,**F;
+bool *isChecked;
+queue<int> preQueue;
+queue<int> addRoad;
 
 class TimeCheck{
 public:
@@ -35,19 +38,23 @@ public:
 } tc;
 
 void initial(){
+  maxFlow = 0;
   C = new int*[size];
   F = new int*[size];
+  isChecked = new bool[size];
   for(int i=0;i<size;i++){
     C[i] = new int[size];
     F[i] = new int[size];
   }
   for(int i=0;i<size;i++){
+    isChecked[i]=false;
     for(int j=0;j<size;j++){
       C[i][j]=0;
       F[i][j]=0;
     }
   }
 }
+
 
 void input(){
   int x,y,weight;
@@ -64,8 +71,14 @@ void deleteAll(){
   }
   delete[] C;
   delete[] F;
+  delete[] isChecked;
+  while(!preQueue.empty())  preQueue.pop();
+  while(!addRoad.empty())  addRoad.pop();
 }
 
+void Ford_Fulkerson(){
+
+}
 
 int main(int argc, char *argv[])
 {
@@ -74,13 +87,6 @@ int main(int argc, char *argv[])
   tc.start();
     //ht.Compression();
   tc.stop();
-  cout<<"Compression complete."<<endl;
-  tc.printTime();
-  tc.start();
-    //ht.Decompression();
-  tc.stop();
-  cout<<"Decompression complete."<<endl;
-  tc.printTime();
 
   deleteAll();
   return 0;

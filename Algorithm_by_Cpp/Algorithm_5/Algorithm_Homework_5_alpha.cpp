@@ -72,20 +72,21 @@ struct compare{//For priority queue
 
 class HuffmanTree{
 private:
+  ifstream fin;
+  ofstream fout;
   node *root;
   string *codeTable;
   double *freqTable;
   string orgfilename;
   string cfilename;
   string dcfilename;
-  string extension;
 
   void deleteNode(node *x);
   void countFreq();
   void initialHuffmanTree();
   void buildCodeTable(node *x,string str);
-  void DLRtraverse(ofstream* fout,node *x,unsigned char* buffer,int* pointer);
-  void rebuildHuffmanTree(ifstream* fin,node *x,unsigned char* buffer,int* pointer);
+  void DLRtraverse(node *x,unsigned char* buffer,int* pointer);
+  void rebuildHuffmanTree(node *x,unsigned char* buffer,int* pointer);
   void printCodeTable(node *x);
 public:
   HuffmanTree();
@@ -112,6 +113,8 @@ HuffmanTree::~HuffmanTree(){
   deleteNode(root);
   delete[] codeTable;
   delete[] freqTable;
+  if(fin.is_open()) fin.close();
+  if(fout.is_open()) fout.close();
   //while(!pq.empty())  pq.pop();
 }
 
@@ -129,7 +132,7 @@ node* HuffmanTree::getRoot(){
 void HuffmanTree::countFreq(){
   unsigned char temp;
   //Read File
-  ifstream fin(orgfilename.c_str(),ios_base::in|ios_base::binary);
+  fin.open(orgfilename.c_str(),ios_base::in|ios_base::binary);
   if(!fin.is_open()){
     cout<<"Error when open file."<<endl;
     return;
@@ -203,7 +206,6 @@ void HuffmanTree::Compression(string filename=""){
   if(!filename.empty()) orgfilename = filename;
   size_t loc=orgfilename.find_last_of(".");
   if(loc != string::npos){
-    //extension = orgfilename.substr(loc+1);
     cfilename = orgfilename + ".hmc";
   }
   //some step before build the Compression file.
@@ -211,8 +213,8 @@ void HuffmanTree::Compression(string filename=""){
   initialHuffmanTree();
   buildCodeTable(root,"");
 
-  ifstream fin(orgfilename.c_str(), ios_base::in|ios_base::binary);
-  ofstream fout(cfilename.c_str(), ios_base::out|ios_base::binary);
+  fin.open(orgfilename.c_str(), ios_base::in|ios_base::binary);
+  fout.open(cfilename.c_str(), ios_base::out|ios_base::binary);
 
   fin.seekg(0, ios_base::end);
   unsigned int fileLen = fin.tellg();
@@ -220,16 +222,16 @@ void HuffmanTree::Compression(string filename=""){
   fin.seekg(0, ios_base::beg);
 
   //cout<<"Filelen from orgfile:"<<fileLen<<endl;
-  cout<<fout.tellp()<<endl;
+  //cout<<fout.tellp()<<endl;
 
   unsigned char inBuff;
   unsigned char outBuff=0x00;
   int pointer=0;
 
-  DLRtraverse(&fout,root,&outBuff,&pointer);
+  DLRtraverse(root,&outBuff,&pointer);
   fout.write((char *)&outBuff,sizeof(outBuff));
 
-  cout<<fout.tellp()<<endl;
+  //cout<<fout.tellp()<<endl;
 
   pointer=0;
   outBuff=0;
@@ -281,20 +283,22 @@ void HuffmanTree::Compression(string filename=""){
   DLRtraverse(fout,x->right,buffer,pointer);
 }*/
 
-void HuffmanTree::DLRtraverse(ofstream* fout,node *x,unsigned char* buffer,int* pointer){//use DLR traverse to save the Huffman Tree to the compression file
+void HuffmanTree::DLRtraverse(node *x,unsigned char* buffer,int* pointer){//use DLR traverse to save the Huffman Tree to the compression file
   if(x == NULL) return;
   if(x->isLeaf()){
     *buffer =(*buffer << 1) | 0x01;
     (*pointer)++;
+    cout<<(int)x->value<<endl;
     if(*pointer >= sizeof(*buffer)*8){
-      fout->write((char *)buffer,sizeof(*buffer));
+      fout.write((char *)buffer,sizeof(*buffer));
       *buffer = x->value;
-      fout->write((char *)buffer,sizeof(*buffer));
+      fout.write((char *)buffer,sizeof(*buffer));
+      *buffer = 0x00;
       *pointer=0;
     }
     else{
       *buffer = (*buffer << (sizeof(*buffer)*8-*pointer)) | (x->value >> *pointer);
-      fout->write((char *)buffer,sizeof(*buffer));
+      fout.write((char *)buffer,sizeof(*buffer));
       *buffer = x->value;
     }
     return;
@@ -303,18 +307,18 @@ void HuffmanTree::DLRtraverse(ofstream* fout,node *x,unsigned char* buffer,int* 
     *buffer =(*buffer << 1) | 0x00;
     (*pointer)++;
     if(*pointer >= sizeof(*buffer)*8){
-      fout->write((char *)buffer,sizeof(*buffer));
+      fout.write((char *)buffer,sizeof(*buffer));
       *pointer=0;
     }
-    DLRtraverse(fout,x->left,buffer,pointer);
-    DLRtraverse(fout,x->right,buffer,pointer);
+    DLRtraverse(x->left,buffer,pointer);
+    DLRtraverse(x->right,buffer,pointer);
   }
 }
 
-void HuffmanTree::rebuildHuffmanTree(ifstream* fin,node *x,unsigned char* buffer,int* pointer){//File Header has the node list of Huffman Tree by DLR traverse.Start from root
+void HuffmanTree::rebuildHuffmanTree(node *x,unsigned char* buffer,int* pointer){//File Header has the node list of Huffman Tree by DLR traverse.Start from root
   //Read the first bit,if it's 0 ,means this node has children.If it's 1,means this node is a leaf,and 1 byte after this bit is the value of this leaf node.
   if(*pointer < 0){//the pointer has the value from 7 to 0.if pointer less then 0(-1),means we are already read this byte of buffer,get the next inBuff.
-    fin->read((char *)buffer,sizeof(*buffer));
+    fin.read((char *)buffer,sizeof(*buffer));
     *pointer = sizeof(*buffer)*8-1;
   }
   unsigned char temp = (*buffer >> *pointer) & 0x01;
@@ -323,15 +327,16 @@ void HuffmanTree::rebuildHuffmanTree(ifstream* fin,node *x,unsigned char* buffer
   if(temp == 0x01){//is a leaf
     unsigned char v;//get the value of the leaf
     if(*pointer < 0){//
-      fin->read((char *)buffer,sizeof(*buffer));
+      fin.read((char *)buffer,sizeof(*buffer));
       v = *buffer;
     }
     else{
       v = *buffer << (sizeof(*buffer)*8-1 - *pointer);
-      fin->read((char *)buffer,sizeof(*buffer));
+      fin.read((char *)buffer,sizeof(*buffer));
       v = v | (*buffer >> *pointer);
     }
-    x->value=v;
+    cout<<(int)v<<endl;
+    x->value = v;
     return;
   }
   else if(temp == 0x00){
@@ -339,7 +344,7 @@ void HuffmanTree::rebuildHuffmanTree(ifstream* fin,node *x,unsigned char* buffer
     node *r=new node();
     x->left = l;
     l->parent = x;
-    rebuildHuffmanTree(fin,l,buffer,pointer);
+    rebuildHuffmanTree(l,buffer,pointer);
     x->right = r;
     r->parent = x;
     rebuildHuffmanTree(fin,r,buffer,pointer);
@@ -352,28 +357,28 @@ void HuffmanTree::Decompression(string filename=""){
   if(!filename.empty()) cfilename = filename;
   size_t loc=cfilename.find(".hmc");
   if(loc != string::npos) dcfilename = cfilename.substr(0,loc);
-  loc = dcfilename.find_last_of('.'+extension);
+  loc = dcfilename.find_last_of('.');
   if(loc != string::npos) dcfilename.insert(loc,"_dc");
 
   //some step before build the Compression file.
-  ifstream fin(cfilename.c_str(), ios_base::in|ios_base::binary);
-  ofstream fout(dcfilename.c_str(), ios_base::out|ios_base::binary);
+  fin.open(cfilename.c_str(), ios_base::in|ios_base::binary);
+  fout.open(dcfilename.c_str(), ios_base::out|ios_base::binary);
 
   unsigned int fileLen = 0;
   fin.read((char *)&fileLen, sizeof(fileLen));
 
   //cout<<"Filelen from cfile:"<<fileLen<<endl;
-  cout<<fin.tellg()<<endl;
+  //cout<<fin.tellg()<<endl;
 
   unsigned char inBuff;
   unsigned char outBuff;
   int pointer=-1;
   root = new node();
-  rebuildHuffmanTree(&fin,root,&inBuff,&pointer);
+  rebuildHuffmanTree(root,&inBuff,&pointer);
 
   fin.read((char *)&inBuff,sizeof(inBuff));
 
-  cout<<fin.tellg()<<endl;
+  //cout<<fin.tellg()<<endl;
 
   buildCodeTable(root,"");
   pointer=-1;
@@ -402,7 +407,8 @@ void HuffmanTree::Decompression(string filename=""){
 
 int main(int argc, char *argv[])
 {
-
+  bool x=false;
+  cout<<sizeof(x)<<endl;
   HuffmanTree ht=HuffmanTree();
   string filename="4test.all";
   tc.start();
