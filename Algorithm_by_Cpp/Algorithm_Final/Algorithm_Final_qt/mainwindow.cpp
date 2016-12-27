@@ -1,0 +1,176 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+
+MainWindow::MainWindow(QWidget *parent):
+    QMainWindow(parent),ui(new Ui::MainWindow){
+    ui->setupUi(this);
+    resize(width, height);
+    initial();
+}
+
+MainWindow::~MainWindow(){
+    for(int i=0;i<size;i++) delete[] chessboard[i];
+    delete[] chessboard;
+    delete ui;
+}
+
+void MainWindow::initial(){
+  chessboard = new int*[size];
+  for(int i=0;i<size;i++){
+    chessboard[i] = new int[size];
+    for(int j=0;j<size;j++){
+      chessboard[i][j] = NONE;
+    }
+  }
+  //memset(chessboard, NONE, 15 * 15 * sizeof(int));
+  player = false;//false ->BLACK round; true -> WHITE round
+}
+
+void MainWindow::paintEvent(QPaintEvent *){
+    QPainter p(this);
+    //p.QPainter::setBackgroundColor(QColor::QColor(0,195,255));
+    p.setRenderHint(QPainter::Antialiasing, true);
+    int i, j;
+    for (i = 0; i <= size; i++){
+        p.drawLine(20, 20 + i*step, width-20, 20 + i*step);
+        p.drawLine(20 + i*step, 20, 20 + i*step, width-20);
+    }
+
+    QBrush brush;
+    brush.setStyle(Qt::SolidPattern);
+    for (i = 0; i < size; i++){
+        for (j = 0; j < size; j++){
+            if(chessboard[i][j] == BLACK){
+                //std::cout<<"black"<<std::endl;
+                brush.setColor(Qt::black);
+                p.setBrush(brush);
+                p.drawEllipse(QPoint((i+1)*step, (j+1)*step), 15, 15);
+                //std::cout<<"done"<<std::endl;
+            }
+            else if(chessboard[i][j] == WHITE){
+                //std::cout<<"white"<<std::endl;
+                brush.setColor(Qt::white);
+                p.setBrush(brush);
+                p.drawEllipse(QPoint((i+1)*step, (j+1)*step), 15, 15);
+                //std::cout<<"Done"<<std::endl;
+            }
+        }
+    }
+}
+
+void MainWindow::mouseReleaseEvent(QMouseEvent *e){
+    int x, y;
+    if(e->x() >= 20 && e->x() < width-20 && e->y() >= 20 && e->y() < width-20){
+        x = (e->x() - 20) / step;
+        y = (e->y() - 20) / step;
+        //std::cout<<"x:"<<x<<",y:"<<y<<std::endl;
+        //std::cout<<chessboard[x][y]<<std::endl;
+        if (chessboard[x][y] == NONE){
+            chessboard[x][y] = player?WHITE:BLACK;
+            player = !player;
+        }
+        std::cout<<Qt::black<<std::endl;
+        /*if(isWin(x, y) != NONE){
+            update();
+            setEnabled(false);
+            if(winCheck(x, y) == BLACK)     QMessageBox::information(this, "Win", "Black Win", QMessageBox::Ok);
+            else if(winCheck(x, y) == WHITE)QMessageBox::information(this, "Win", "White Win", QMessageBox::Ok);
+        }*/
+    }
+    update();
+}
+
+int MainWindow::isWin(int x, int y){
+     //return f1(x, y) || f2(x, y) || f3(x, y) || f4(x ,y);
+     for (int i = 0; i < 5; i++){
+         if(y - i >= 0 && y + 4 - i <= size &&
+            chessboard[x][y - i] == chessboard[x][y + 1 - i] &&
+            chessboard[x][y - i] == chessboard[x][y + 2 - i] &&
+            chessboard[x][y - i] == chessboard[x][y + 3 - i] &&
+            chessboard[x][y - i] == chessboard[x][y + 4 - i])
+         return 1;
+     }
+     for (int i = 0; i < 5; i++){
+         if(x - i >= 0 &&
+            x + 4 - i <= 0xF &&
+            chessboard[x - i][y] == chessboard[x + 1 - i][y] &&
+            chessboard[x - i][y] == chessboard[x + 2 - i][y] &&
+            chessboard[x - i][y] == chessboard[x + 3 - i][y] &&
+            chessboard[x - i][y] == chessboard[x + 4 - i][y])
+            return 1;
+     }
+     for (int i = 0; i < 5; i++){
+         if(x - i >= 0 && y - i >= 0 &&
+            x + 4 - i <= 0xF && y + 4 - i <= 0xF &&
+            chessboard[x - i][y - i] == chessboard[x + 1 - i][y + 1 - i] &&
+            chessboard[x - i][y - i] == chessboard[x + 2 - i][y + 2 - i] &&
+            chessboard[x - i][y - i] == chessboard[x + 3 - i][y + 3 - i] &&
+            chessboard[x - i][y - i] == chessboard[x + 4 - i][y + 4 - i])
+            return 1;
+     }
+     for (int i = 0; i < 5; i++){
+         if(x + i <= 0xF && y - i >= 0 &&
+            x - 4 + i >= 0 && y + 4 - i <= 0xF &&
+            chessboard[x + i][y - i] == chessboard[x - 1 + i][y + 1 - i] &&
+            chessboard[x + i][y - i] == chessboard[x - 2 + i][y + 2 - i] &&
+            chessboard[x + i][y - i] == chessboard[x - 3 + i][y + 3 - i] &&
+            chessboard[x + i][y - i] == chessboard[x - 4 + i][y + 4 - i])
+            return 1;
+     }
+
+}
+
+/*int MainWindow::winCheck(int x,int y){
+
+}*/
+
+int MainWindow::f1(int x, int y){
+    for (int i = 0; i < 5; i++){
+        if(y - i >= 0 && y + 4 - i <= 0xF &&
+           chessboard[x][y - i] == chessboard[x][y + 1 - i] &&
+           chessboard[x][y - i] == chessboard[x][y + 2 - i] &&
+           chessboard[x][y - i] == chessboard[x][y + 3 - i] &&
+           chessboard[x][y - i] == chessboard[x][y + 4 - i])
+        return 1;
+    }
+    return 0;
+}
+
+int MainWindow::f2(int x, int y){
+    for (int i = 0; i < 5; i++){
+        if(x - i >= 0 &&
+           x + 4 - i <= 0xF &&
+           chessboard[x - i][y] == chessboard[x + 1 - i][y] &&
+           chessboard[x - i][y] == chessboard[x + 2 - i][y] &&
+           chessboard[x - i][y] == chessboard[x + 3 - i][y] &&
+           chessboard[x - i][y] == chessboard[x + 4 - i][y])
+           return 1;
+    }
+    return 0;
+}
+
+int MainWindow::f3(int x, int y){
+    for (int i = 0; i < 5; i++){
+        if(x - i >= 0 && y - i >= 0 &&
+           x + 4 - i <= 0xF && y + 4 - i <= 0xF &&
+           chessboard[x - i][y - i] == chessboard[x + 1 - i][y + 1 - i] &&
+           chessboard[x - i][y - i] == chessboard[x + 2 - i][y + 2 - i] &&
+           chessboard[x - i][y - i] == chessboard[x + 3 - i][y + 3 - i] &&
+           chessboard[x - i][y - i] == chessboard[x + 4 - i][y + 4 - i])
+           return 1;
+    }
+    return 0;
+}
+
+int MainWindow::f4(int x, int y){
+    for (int i = 0; i < 5; i++){
+        if(x + i <= 0xF && y - i >= 0 &&
+           x - 4 + i >= 0 && y + 4 - i <= 0xF &&
+           chessboard[x + i][y - i] == chessboard[x - 1 + i][y + 1 - i] &&
+           chessboard[x + i][y - i] == chessboard[x - 2 + i][y + 2 - i] &&
+           chessboard[x + i][y - i] == chessboard[x - 3 + i][y + 3 - i] &&
+           chessboard[x + i][y - i] == chessboard[x - 4 + i][y + 4 - i])
+           return 1;
+    }
+    return 0;
+}

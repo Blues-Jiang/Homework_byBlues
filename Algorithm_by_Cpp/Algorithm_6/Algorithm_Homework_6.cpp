@@ -7,13 +7,17 @@ using namespace std;
 #include <time.h>
 #include <sys/time.h>
 #define MAX 99
+#define INF 9999999
+#define s 0
+#define t (size-1)
 
 int size = 6;
+
 int maxFlow;
 int **C,**F;
 bool *isChecked;
 queue<int> preQueue;
-queue<int> addRoad;
+int* path;
 
 class TimeCheck{
 public:
@@ -38,30 +42,30 @@ public:
 } tc;
 
 void initial(){
+  int x,y,weight;
+  int edgenum;
+  cin>>size>>edgenum;
   maxFlow = 0;
   C = new int*[size];
   F = new int*[size];
+  path = new int[size];
   isChecked = new bool[size];
   for(int i=0;i<size;i++){
     C[i] = new int[size];
     F[i] = new int[size];
   }
   for(int i=0;i<size;i++){
+    path[i] = -1;
     isChecked[i]=false;
     for(int j=0;j<size;j++){
       C[i][j]=0;
       F[i][j]=0;
     }
   }
-}
-
-
-void input(){
-  int x,y,weight;
-  do{
+  while(edgenum--){
     cin>>x>>y>>weight;
     C[x][y] = weight;
-  }while(x != 0 && y != 0);
+  }
 }
 
 void deleteAll(){
@@ -71,23 +75,82 @@ void deleteAll(){
   }
   delete[] C;
   delete[] F;
+  delete[] path;
   delete[] isChecked;
   while(!preQueue.empty())  preQueue.pop();
-  while(!addRoad.empty())  addRoad.pop();
+}
+
+int getResEdge(int x,int y){
+  if(C[x][y] > 0)      return (C[x][y]-F[x][y]);
+  else if(C[y][x] > 0) return F[x][y];
+  else                 return 0;
+}
+
+int BFS(){
+  int addValue=INF;
+  for(int i=0;i<size;i++){//initial
+    isChecked[i]=false;
+    path[i] = -1;//path[v]=u,means a edge u->v.
+  }
+  while(!preQueue.empty())  preQueue.pop();
+  //BFS Find the path
+  preQueue.push(s);
+  isChecked[s]=true;
+  while(!preQueue.empty()){
+    int point = preQueue.front();
+    preQueue.pop();
+    //cout<<"-> "<<point<<endl;
+    if(point == t)  break;
+
+    for(int i=s+1;i<=t;i++){
+      if(isChecked[i]) continue;
+      if(getResEdge(point,i) > 0){
+        preQueue.push(i);
+        isChecked[i] = true;
+        path[i] = point;
+        addValue = (addValue<=getResEdge(point,i))?addValue:getResEdge(point,i);
+        //cout<<point<<" -> "<<i<<endl;
+      }
+    }
+  }
+
+  if(path[t] == -1) return -1;
+  else              return addValue;
 }
 
 void Ford_Fulkerson(){
+  int addValue;
+  while(true){
+    addValue = BFS();
+    if(addValue <= 0){
 
+      cout<<"Can't find a path.The max flow is "<<maxFlow<<endl;
+      break;
+    }
+    cout<<"Add "<<addValue<<" to the flow."<<endl;
+    maxFlow += addValue;
+    int u,v;
+    v = t;
+    do{
+      u = path[v];
+      cout<<u<<"-> "<<v<<endl;
+      F[u][v] += addValue;
+      F[v][u] -= addValue;
+      v = u;
+    }while(v != s);
+
+  }
 }
+
 
 int main(int argc, char *argv[])
 {
-  HuffmanTree ht=HuffmanTree();
+  initial();
 
   tc.start();
-    //ht.Compression();
+    Ford_Fulkerson();
   tc.stop();
-
+  tc.printTime();
   deleteAll();
   return 0;
 }
