@@ -2,6 +2,7 @@
 #include <fstream>
 using namespace std;
 #include <queue>
+#include <stack>
 #include <vector>
 #include <iomanip>
 #include <time.h>
@@ -123,25 +124,27 @@ void Ford_Fulkerson(){
   while(true){
     addValue = BFS();
     if(addValue <= 0){
-
-      cout<<"Can't find a path.The max flow is "<<maxFlow<<endl;
+      cout<<"Can't find a path.The max flow is "<<maxFlow<<'.'<<endl;
       break;
     }
-    cout<<"Add "<<addValue<<" to the flow."<<endl;
     maxFlow += addValue;
-    int u,v;
-    v = t;
-    do{
-      u = path[v];
-      cout<<u<<"-> "<<v<<endl;
-      F[u][v] += addValue;
-      F[v][u] -= addValue;
-      v = u;
-    }while(v != s);
-
+    stack<int> buffer;
+    int u=t;
+    while(u != s){
+      buffer.push(u);
+      u = path[buffer.top()];
+      F[u][buffer.top()] += addValue;
+      F[buffer.top()][u] -= addValue;
+    }
+    cout<<"s";
+    while(buffer.size() > 1 && buffer.top() != t){
+      cout<<" -> n"<<buffer.top();
+      buffer.pop();
+    }
+    cout<<" -> t"<<endl;
+    cout<<"Add "<<addValue<<" to the flow."<<endl;
   }
 }
-
 
 int main(int argc, char *argv[])
 {

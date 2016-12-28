@@ -8,6 +8,8 @@
 //#include <qpainter.h>
 #include <iostream>
 
+#define INF 99999999
+
 #define WHITE 1
 #define BLACK 2
 #define NONE 0
@@ -17,6 +19,16 @@
 #define height 720
 #define step 40
 //#define step (width-40)/size
+
+struct Point{
+  int x;
+  int y;
+  int chess;
+  int value;
+  Point(){
+
+  }
+};
 
 namespace Ui {
 class MainWindow;
@@ -33,13 +45,14 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    int** chessboard;
+    int Num;
+    int **chessboard;
+    int **scoreBlack,**scoreWhite;
+
     void initial();
+    void AI();
     int isWin(int, int);
-    int f1(int, int);
-    int f2(int, int);
-    int f3(int, int);
-    int f4(int, int);
+
     bool player;
 };
 
